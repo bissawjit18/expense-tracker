@@ -1,6 +1,6 @@
 
     console.log('JavaScript loaded');
-    let currentUser = localStorage.getItem('currentUser') || 'default';
+    let currentUser = localStorage.getItem('currentUser') || null;
     let expenses = [];
     let filteredExpenses = [];
     let budget = {};
@@ -11,6 +11,10 @@
     // Local Storage Fallback
     function getLocalStorageItem(key, defaultValue) {
       try {
+        if (key === 'users') {
+          const item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : defaultValue;
+        }
         const item = localStorage.getItem(`${currentUser}_${key}`);
         return item ? JSON.parse(item) : defaultValue;
       } catch (error) {
@@ -21,7 +25,11 @@
 
     function setLocalStorageItem(key, value) {
       try {
-        localStorage.setItem(`${currentUser}_${key}`, JSON.stringify(value));
+        if (key === 'users') {
+          localStorage.setItem(key, JSON.stringify(value));
+        } else {
+          localStorage.setItem(`${currentUser}_${key}`, JSON.stringify(value));
+        }
       } catch (error) {
         console.error(`Error setting localStorage for ${key}:`, error);
       }
@@ -30,17 +38,13 @@
     // User Management
     function loadUserProfile() {
       console.log('Loading user profile');
-      document.getElementById('currentUser').textContent = currentUser === 'default' ? 'ডিফল্ট ইউজার' : currentUser;
-      const users = getLocalStorageItem('users', []);
-      const userSelect = document.getElementById('userSelect');
-      userSelect.innerHTML = '<option value="">ইউজার নির্বাচন করুন</option>';
-      users.forEach(user => {
-        userSelect.innerHTML += `<option value="${user}">${user}</option>`;
-      });
-      // Disable user name input if max users reached
-      const userNameInput = document.getElementById('userName');
-      userNameInput.disabled = users.length >= 3;
-      userNameInput.placeholder = users.length >= 3 ? 'সর্বোচ্চ ৩টি ইউজার তৈরি করা যায়' : 'ইউজারের নাম লিখুন';
+      if (!currentUser) {
+        showUserModal();
+        showNotification('প্রথমে একটি ইউজার প্রোফাইল তৈরি করুন!', 'info');
+        return;
+      }
+      document.getElementById('currentUser').textContent = currentUser;
+      updateUserSelect();
       expenses = getLocalStorageItem('expenses', []);
       filteredExpenses = [...expenses];
       budget = getLocalStorageItem('budget', {
@@ -56,27 +60,33 @@
       generateMonthlyReport();
     }
 
+    function updateUserSelect() {
+      console.log('Updating user select dropdown');
+      const users = getLocalStorageItem('users', []);
+      const userSelect = document.getElementById('userSelect');
+      userSelect.innerHTML = '<option value="">ইউজার নির্বাচন করুন</option>';
+      users.forEach(user => {
+        userSelect.innerHTML += `<option value="${user}" ${user === currentUser ? 'selected' : ''}>${user}</option>`;
+      });
+    }
+
     function saveUserProfile() {
       console.log('Saving user profile');
       const userName = document.getElementById('userName').value.trim();
-      if (userName) {
-        let users = getLocalStorageItem('users', []);
-        if (users.length >= 3 && !users.includes(userName)) {
-          showNotification('সর্বোচ্চ ৩টি ইউজার তৈরি করা যায়!', 'error');
-          return;
-        }
-        if (!users.includes(userName)) {
-          users.push(userName);
-          setLocalStorageItem('users', users);
-        }
-        currentUser = userName;
-        localStorage.setItem('currentUser', currentUser);
-        loadUserProfile();
-        closeUserModal();
-        showNotification(`ইউজার প্রোফাইল সেট করা হয়েছে: ${userName}`, 'success');
-      } else {
+      if (!userName) {
         showNotification('ইউজারের নাম লিখুন!', 'error');
+        return;
       }
+      let users = getLocalStorageItem('users', []);
+      if (!users.includes(userName)) {
+        users.push(userName);
+        setLocalStorageItem('users', users);
+      }
+      currentUser = userName;
+      localStorage.setItem('currentUser', currentUser);
+      loadUserProfile();
+      closeUserModal();
+      showNotification(`ইউজার প্রোফাইল তৈরি করা হয়েছে: ${userName}`, 'success');
     }
 
     function switchUser() {
@@ -91,6 +101,7 @@
 
     function showUserModal() {
       console.log('Showing user modal');
+      updateUserSelect();
       document.getElementById('userModal').classList.remove('hidden');
     }
 
@@ -102,8 +113,8 @@
 
     function deleteUserPrompt() {
       console.log('Showing delete user confirmation');
-      if (currentUser === 'default') {
-        showNotification('ডিফল্ট ইউজার ডিলিট করা যায় না!', 'error');
+      if (!currentUser) {
+        showNotification('কোনো ইউজার নির্বাচিত নয়!', 'error');
         return;
       }
       document.getElementById('deleteUserModal').classList.remove('hidden');
@@ -114,12 +125,11 @@
       let users = getLocalStorageItem('users', []);
       users = users.filter(user => user !== currentUser);
       setLocalStorageItem('users', users);
-      // Clear user data
       localStorage.removeItem(`${currentUser}_expenses`);
       localStorage.removeItem(`${currentUser}_budget`);
       localStorage.removeItem(`${currentUser}_theme`);
-      currentUser = 'default';
-      localStorage.setItem('currentUser', currentUser);
+      currentUser = null;
+      localStorage.removeItem('currentUser');
       loadUserProfile();
       closeDeleteUserModal();
       closeUserModal();
@@ -140,10 +150,14 @@
 
     function setInitialTheme() {
       console.log('Setting initial theme');
-      const savedTheme = getLocalStorageItem('theme', 'light');
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
-      themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-      console.log('Applied theme:', savedTheme);
+      const savedTheme = getLocalStorageItem('theme', null);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+      themeIcon.textContent = initialTheme === 'dark' ? '☀️' : '🌙';
+      setLocalStorageItem('theme', initialTheme);
+      console.log('Applied theme:', initialTheme);
+      updateCharts();
     }
 
     function toggleTheme() {
@@ -157,6 +171,13 @@
     }
 
     themeToggle.addEventListener('click', toggleTheme);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      const newTheme = e.matches ? 'dark' : 'light';
+      document.documentElement.classList.toggle('dark', e.matches);
+      themeIcon.textContent = e.matches ? '☀️' : '🌙';
+      setLocalStorageItem('theme', newTheme);
+      updateCharts();
+    });
     setInitialTheme();
 
     // Notification
@@ -180,13 +201,25 @@
     // Budget Management
     function saveBudget() {
       console.log('Saving budget');
+      const totalBudget = parseFloat(document.getElementById('totalBudget').value) || 0;
+      const foodBudget = parseFloat(document.getElementById('foodBudget').value) || 0;
+      const transportBudget = parseFloat(document.getElementById('transportBudget').value) || 0;
+      const entertainmentBudget = parseFloat(document.getElementById('entertainmentBudget').value) || 0;
+      const billBudget = parseFloat(document.getElementById('billBudget').value) || 0;
+      const otherBudget = parseFloat(document.getElementById('otherBudget').value) || 0;
+
+      if (totalBudget < 0 || foodBudget < 0 || transportBudget < 0 || entertainmentBudget < 0 || billBudget < 0 || otherBudget < 0) {
+        showNotification('বাজেট মান নেগেটিভ হতে পারে না!', 'error');
+        return;
+      }
+
       budget = {
-        total: parseFloat(document.getElementById('totalBudget').value) || 0,
-        food: parseFloat(document.getElementById('foodBudget').value) || 0,
-        transport: parseFloat(document.getElementById('transportBudget').value) || 0,
-        entertainment: parseFloat(document.getElementById('entertainmentBudget').value) || 0,
-        bill: parseFloat(document.getElementById('billBudget').value) || 0,
-        other: parseFloat(document.getElementById('otherBudget').value) || 0
+        total: totalBudget,
+        food: foodBudget,
+        transport: transportBudget,
+        entertainment: entertainmentBudget,
+        bill: billBudget,
+        other: otherBudget
       };
       setLocalStorageItem('budget', budget);
       updateBudgetProgress();
@@ -281,14 +314,22 @@
     // Expense Management
     function addExpense() {
       console.log('Adding expense');
-      const date = document.getElementById('date')?.value;
-      const description = document.getElementById('description')?.value;
-      const amount = parseFloat(document.getElementById('amount')?.value);
-      const category = document.getElementById('category')?.value;
-      const notes = document.getElementById('notes')?.value;
+      const date = document.getElementById('date').value;
+      const description = document.getElementById('description').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const notes = document.getElementById('notes').value;
 
-      if (!date || !description || !amount) {
-        showNotification('তারিখ, বিবরণ এবং টাকার পরিমাণ পূরণ করুন!', 'error');
+      if (!date) {
+        showNotification('তারিখ নির্বাচন করুন!', 'error');
+        return;
+      }
+      if (!description) {
+        showNotification('বিবরণ লিখুন!', 'error');
+        return;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        showNotification('বৈধ টাকার পরিমাণ লিখুন!', 'error');
         return;
       }
 
@@ -318,14 +359,22 @@
 
     function saveEditedExpense() {
       console.log('Saving edited expense');
-      const date = document.getElementById('editDate')?.value;
-      const description = document.getElementById('editDescription')?.value;
-      const amount = parseFloat(document.getElementById('editAmount')?.value);
-      const category = document.getElementById('editCategory')?.value;
-      const notes = document.getElementById('editNotes')?.value;
+      const date = document.getElementById('editDate').value;
+      const description = document.getElementById('editDescription').value.trim();
+      const amount = parseFloat(document.getElementById('editAmount').value);
+      const category = document.getElementById('editCategory').value;
+      const notes = document.getElementById('editNotes').value;
 
-      if (!date || !description || !amount) {
-        showNotification('তারিখ, বিবরণ এবং টাকার পরিমাণ পূরণ করুন!', 'error');
+      if (!date) {
+        showNotification('তারিখ নির্বাচন করুন!', 'error');
+        return;
+      }
+      if (!description) {
+        showNotification('বিবরণ লিখুন!', 'error');
+        return;
+      }
+      if (isNaN(amount) || amount <= 0) {
+        showNotification('বৈধ টাকার পরিমাণ লিখুন!', 'error');
         return;
       }
 
@@ -342,7 +391,7 @@
 
     function closeEditModal() {
       console.log('Closing edit modal');
-      document.getElementById('editModal')?.classList.add('hidden');
+      document.getElementById('editModal').classList.add('hidden');
       editingIndex = null;
     }
 
@@ -381,9 +430,9 @@
             <td class="p-2 border dark:border-gray-600">${expense.amount}</td>
             <td class="p-2 border dark:border-gray-600">${expense.category}</td>
             <td class="p-2 border dark:border-gray-600">${expense.notes}</td>
-            <td class="p-2 border dark:border-gray-600 flex justify-center gap-5">
-              <button onclick="editExpense(${index})" class="text-blue-500 hover:underline mr-2" title="ইডিট"><i class="fa-solid fa-pen-to-square"></i></button>
-              <button onclick="deleteExpense(${index})" class="text-red-500 hover:underline" title="মুছুন"><i class="fa-solid fa-trash"></i></button>
+            <td class="p-2 border dark:border-gray-600">
+              <button onclick="editExpense(${index})" class="text-blue-500 hover:underline mr-2">ইডিট</button>
+              <button onclick="deleteExpense(${index})" class="text-red-500 hover:underline">মুছুন</button>
             </td>
           </tr>`;
         tableBody.innerHTML += row;
@@ -396,9 +445,9 @@
             <p><strong>টাকা:</strong> ${expense.amount}</p>
             <p><strong>ক্যাটাগরি:</strong> ${expense.category}</p>
             <p><strong>মন্তব্য:</strong> ${expense.notes || '-'}</p>
-            <div class="mt-2 flex justify-center gap-20">
-              <button onclick="editExpense(${index})" class="text-blue-500 hover:underline" title="ইডিট"><i class="fa-solid fa-pen-to-square"></i></button>
-              <button onclick="deleteExpense(${index})" class="text-red-500 hover:underline" title="মুছুন"><i class="fa-solid fa-trash"></i></button>
+            <div class="mt-2 flex gap-2">
+              <button onclick="editExpense(${index})" class="text-blue-500 hover:underline">ইডিট</button>
+              <button onclick="deleteExpense(${index})" class="text-red-500 hover:underline">মুছুন</button>
             </div>
           </div>`;
         cardContainer.innerHTML += card;
@@ -418,9 +467,9 @@
 
     function filterExpenses() {
       console.log('Filtering expenses');
-      const startDate = document.getElementById('filterStartDate')?.value;
-      const endDate = document.getElementById('filterEndDate')?.value;
-      const category = document.getElementById('filterCategory')?.value;
+      const startDate = document.getElementById('filterStartDate').value;
+      const endDate = document.getElementById('filterEndDate').value;
+      const category = document.getElementById('filterCategory').value;
 
       filteredExpenses = expenses.filter(expense => {
         let matches = true;
@@ -450,9 +499,9 @@
 
     function printExpenses() {
       console.log('Printing expenses');
-      const printContent = document.querySelector('.desktop-table')?.outerHTML;
-      const total = document.getElementById('totalAmount')?.textContent;
-      const userName = currentUser === 'default' ? 'ডিফল্ট ইউজার' : currentUser;
+      const printContent = document.querySelector('.desktop-table').outerHTML;
+      const total = document.getElementById('totalAmount').textContent;
+      const userName = currentUser || 'ইউজার';
       const printWindow = window.open('', '', 'height=600,width=800');
       printWindow.document.write(`
         <html>
@@ -479,8 +528,12 @@
 
     function generateMonthlyReport() {
       console.log('Generating monthly report');
-      const reportMonth = document.getElementById('reportMonth')?.value;
-      if (!reportMonth) return;
+      const reportMonth = document.getElementById('reportMonth').value;
+      if (!reportMonth) {
+        document.getElementById('monthlyReport').innerHTML = `<p class="text-gray-900 dark:text-slate-100">কোনো রিপোর্ট উপলব্ধ নেই। মাস নির্বাচন করুন।</p>`;
+        updateCharts([]);
+        return;
+      }
 
       const [year, month] = reportMonth.split('-');
       const filteredByMonth = expenses.filter(expense => 
@@ -494,20 +547,35 @@
         categoryBreakdown[expense.category] = (categoryBreakdown[expense.category] || 0) + expense.amount;
       });
 
-      let reportHTML = `<p><strong>মাস: ${year}-${month}</strong></p>`;
-      reportHTML += `<p>মোট খরচ: ${total.toFixed(2)} টাকা</p>`;
-      reportHTML += '<p><strong>ক্যাটাগরি অনুযায়ী খরচ:</strong></p><ul>';
+      let reportHTML = `
+        <div class="space-y-4">
+          <div>
+            <p class="text-lg font-semibold">মাস: <span class="text-indigo-600 dark:text-indigo-400">${year}-${month}</span></p>
+            <p class="text-lg font-semibold">মোট খরচ: <span class="text-indigo-600 dark:text-indigo-400">${total.toFixed(2)}</span> টাকা</p>
+          </div>
+          <div>
+            <p class="text-md font-semibold mb-2 text-gray-900 dark:text-slate-100">ক্যাটাগরি অনুযায়ী খরচ:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-medium text-gray-800 dark:text-slate-200">
+      `;
       for (const [category, amount] of Object.entries(categoryBreakdown)) {
-        reportHTML += `<li>${category}: ${amount.toFixed(2)} টাকা</li>`;
+        reportHTML += `<div class="flex justify-between"><span>${category}</span><span>${amount.toFixed(2)} টাকা</span></div>`;
       }
-      reportHTML += '</ul>';
+      reportHTML += `
+            </div>
+          </div>
+        </div>
+      `;
 
       document.getElementById('monthlyReport').innerHTML = reportHTML;
       updateCharts(filteredByMonth, year, month);
     }
 
-    function updateCharts(filteredExpenses = expenses, year, month) {
+    function updateCharts(filteredExpenses = [], year, month) {
       console.log('Updating charts');
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      const textColor = isDarkMode ? '#f1f5f9' : '#111827';
+      const gridColor = isDarkMode ? '#475569' : '#d1d5db';
+
       const categoryBreakdown = {};
       filteredExpenses.forEach(expense => {
         categoryBreakdown[expense.category] = (categoryBreakdown[expense.category] || 0) + expense.amount;
@@ -521,14 +589,29 @@
           labels: Object.keys(categoryBreakdown),
           datasets: [{
             data: Object.values(categoryBreakdown),
-            backgroundColor: ['#22c55e', '#8b5cf6', '#eab308', '#ef4444', '#6366f1']
+            backgroundColor: ['#34d399', '#a855f7', '#facc15', '#f87171', '#3b82f6', '#f472b6', '#9ca3af', '#2dd4bf'],
+            hoverOffset: 20,
+            borderWidth: 1,
+            borderColor: isDarkMode ? '#e2e8f0' : '#ffffff'
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'ক্যাটাগরি-ভিত্তিক খরচ' }
+            legend: { 
+              position: 'top', 
+              labels: { 
+                font: { size: 14, family: 'Noto Sans Bengali' }, 
+                color: textColor 
+              } 
+            },
+            title: { 
+              display: true, 
+              text: 'ক্যাটাগরি-ভিত্তিক খরচ', 
+              font: { size: 16, family: 'Noto Sans Bengali' }, 
+              color: textColor 
+            }
           }
         }
       });
@@ -542,6 +625,12 @@
 
       const sortedDates = Object.keys(dailyTotals).sort();
       if (timelineChart) timelineChart.destroy();
+
+      const ctx = document.getElementById('timelineChart').getContext('2d');
+      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      gradient.addColorStop(0, isDarkMode ? 'rgba(129, 140, 248, 0.8)' : 'rgba(59, 130, 246, 0.8)');
+      gradient.addColorStop(1, isDarkMode ? 'rgba(165, 180, 252, 0.2)' : 'rgba(96, 165, 250, 0.2)');
+
       timelineChart = new Chart(document.getElementById('timelineChart'), {
         type: 'line',
         data: {
@@ -549,20 +638,50 @@
           datasets: [{
             label: 'দৈনিক খরচ',
             data: sortedDates.map(date => dailyTotals[date]),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-            fill: true
+            borderColor: isDarkMode ? '#818cf8' : '#3b82f6',
+            backgroundColor: gradient,
+            fill: true,
+            tension: 0.4
           }]
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'দৈনিক খরচ ট্রেন্ড' }
+            legend: { 
+              position: 'top', 
+              labels: { 
+                font: { size: 14, family: 'Noto Sans Bengali' }, 
+                color: textColor 
+              } 
+            },
+            title: { 
+              display: true, 
+              text: 'দৈনিক খরচ ট্রেন্ড', 
+              font: { size: 16, family: 'Noto Sans Bengali' }, 
+              color: textColor 
+            }
           },
           scales: {
-            x: { title: { display: true, text: 'তারিখ' } },
-            y: { title: { display: true, text: 'টাকা' }, beginAtZero: true }
+            x: { 
+              title: { 
+                display: true, 
+                text: 'তারিখ', 
+                font: { size: 14, family: 'Noto Sans Bengali' }, 
+                color: textColor 
+              },
+              grid: { color: gridColor }
+            },
+            y: { 
+              title: { 
+                display: true, 
+                text: 'টাকা', 
+                font: { size: 14, family: 'Noto Sans Bengali' }, 
+                color: textColor 
+              }, 
+              beginAtZero: true,
+              grid: { color: gridColor }
+            }
           }
         }
       });
@@ -571,9 +690,10 @@
     // Initial Setup on Page Load
     try {
       loadUserProfile();
-      document.getElementById('reportMonth')?.addEventListener('change', generateMonthlyReport);
+      document.getElementById('reportMonth').addEventListener('change', generateMonthlyReport);
       console.log('Initial render complete');
     } catch (error) {
       console.error('Error during initial render:', error);
       showNotification('অ্যাপ লোড করতে সমস্যা হয়েছে!', 'error');
     }
+ 

@@ -6,69 +6,40 @@
   <title>খরচ ট্র্যাকার</title>
   <link rel="icon" type="image/x-icon" href="src/budgetTracker.ico">
 
-  <!-- font awesome cdn -->
-  <script src="https://kit.fontawesome.com/c25e1ed245.js" crossorigin="anonymous"></script>
-  <!-- DaisyUI cdn -->
-  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-  <style>
-    body {
-      font-family: 'Noto Sans Bengali', sans-serif;
-    }
-    .expense-card {
-      transition: transform 0.2s, opacity 0.2s;
-    }
-    .expense-card:hover {
-      transform: scale(1.02);
-    }
-    @media (max-width: 640px) {
-      .desktop-table {
-        display: none;
-      }
-    }
-    @media (min-width: 641px) {
-      .mobile-cards {
-        display: none;
-      }
-    }
-    #editModal, #userModal, #deleteUserModal {
-      transition: opacity 0.3s ease-in-out;
-    }
-    .progress-bar {
-      height: 20px;
-      background-color: #e5e7eb;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      transition: width 0.3s ease-in-out;
-    }
-  </style>
+
+  <!-- External Css link -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- font awesome cdn -->
+  <script src="https://kit.fontawesome.com/c25e1ed245.js" crossorigin="anonymous"></script>
+  <!-- DaisyUI cdn -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
   <div class="container mx-auto p-4 sm:p-6 max-w-4xl">
     <!-- User Profile and Navigation -->
-    <div class="flex justify-between items-center ml-2 md:ml-4 mb-4">
+    <div class="flex justify-between items-center mb-4">
       <div class="flex items-center gap-4">
         <button id="userProfileButton" class="bg-indigo-500 text-white p-2 rounded hover:bg-indigo-600">ইউজার প্রোফাইল</button>
         <span id="currentUser" class="text-lg font-semibold"></span>
       </div>
-      <!-- <button id="themeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+      <button id="themeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center">
         <span id="themeIcon">🌙</span>
-      </button> -->
+      </button>
     </div>
 
     <!-- User Profile Modal -->
     <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
       <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md w-full max-w-md">
         <h2 class="text-lg sm:text-xl font-semibold mb-4">ইউজার প্রোফাইল</h2>
+        <p class="mb-4 text-sm">নতুন ইউজার তৈরি করুন অথবা বিদ্যমান ইউজার নির্বাচন করুন</p>
         <input type="text" id="userName" placeholder="ইউজারের নাম লিখুন" class="border p-2 rounded w-full mb-4 bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
         <select id="userSelect" class="border p-2 rounded w-full mb-4 bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
           <option value="">ইউজার নির্বাচন করুন</option>
@@ -99,12 +70,12 @@
     <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md mb-6">
       <h2 class="text-lg sm:text-xl font-semibold mb-4">বাজেট সেট করুন</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <input type="number" id="totalBudget" placeholder="মোট মাসিক বাজেট (টাকা)" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-        <input type="number" id="foodBudget" placeholder="খাবারের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-        <input type="number" id="transportBudget" placeholder="পরিবহনের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-        <input type="number" id="entertainmentBudget" placeholder="বিনোদনের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-        <input type="number" id="billBudget" placeholder="বিলের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
-        <input type="number" id="otherBudget" placeholder="অন্যান্য বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="totalBudget" min="0" placeholder="মোট মাসিক বাজেট (টাকা)" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="foodBudget" min="0" placeholder="খাবারের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="transportBudget" min="0" placeholder="পরিবহনের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="entertainmentBudget" min="0" placeholder="বিনোদনের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="billBudget" min="0" placeholder="বিলের বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+        <input type="number" id="otherBudget" min="0" placeholder="অন্যান্য বাজেট" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
         <button onclick="saveBudget()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 sm:col-span-2 text-lg">বাজেট সেভ করুন</button>
       </div>
       <div class="mt-4">
@@ -154,7 +125,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <input type="date" id="date" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
         <input type="text" id="description" placeholder="বিবরণ (যেমন, বাজার)" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
-        <input type="number" id="amount" placeholder="টাকার পরিমাণ" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
+        <input type="number" id="amount" min="0" placeholder="টাকার পরিমাণ" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
         <select id="category" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
           <option value="খাবার">খাবার</option>
           <option value="পরিবহন">পরিবহন</option>
@@ -216,40 +187,23 @@
     <!-- Monthly Report and Charts -->
     <div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md">
       <h2 class="text-lg sm:text-xl font-semibold mb-4">মাসিক রিপোর্ট এবং চার্ট</h2>
-      <div class="mb-4">
-        <input type="month" id="reportMonth" class="border p-2 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
+      <div class="flex flex-col sm:flex-row gap-4 mb-4">
+        <input type="month" id="reportMonth" class="border p-2 rounded bg-gray-50 dark:bg-gray-700 dark:text-gray-100 flex-1">
+        <button onclick="generateMonthlyReport()" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 text-lg">রিপোর্ট রিফ্রেশ</button>
       </div>
-      <div id="monthlyReport" class="text-base sm:text-lg mb-4"></div>
+      <div id="monthlyReport" class="report-card mb-4 text-gray-900 dark:text-slate-100">
+        <p class="text-gray-900 dark:text-slate-100">কোনো রিপোর্ট উপলব্ধ নেই। মাস নির্বাচন করুন।</p>
+      </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <h3 class="text-lg font-semibold mb-2">ক্যাটাগরি-ভিত্তিক খরচ (পাই চার্ট)</h3>
+        <div class="chart-container">
+          <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-slate-100">ক্যাটাগরি-ভিত্তিক খরচ (পাই চার্ট)</h3>
           <canvas id="categoryChart"></canvas>
         </div>
-        <div>
-          <h3 class="text-lg font-semibold mb-2">দৈনিক খরচ ট্রেন্ড (লাইন চার্ট)</h3>
+        <div class="chart-container">
+          <h3 class="text-lg font-bold mb-2 text-gray-900 dark:text-slate-100">দৈনিক খরচ ট্রেন্ড (লাইন চার্ট)</h3>
           <canvas id="timelineChart"></canvas>
         </div>
       </div>
-    </div>
-     
-    <div class="mt-3">
-      <footer class="footer rounded-md sm:footer-horizontal bg-gray-800 text-neutral-content items-center py-4 md:pr-4">
-        <aside class="w-full lg:grid-flow-col text-center  items-center -mb-4 md:-mb-0">
-          <img class="w-[50px] border border-gray-600 p-1 rounded-full text-center rounded-sm justify-self-center" src="src/bissawjit.png" alt="">
-          <p class="text-gray-500">Copyright © 2025 - All right reserved by <b>Budget Tracker App | BISSAWJIT</b></p>
-        </aside>
-        <nav class="grid-flow-col gap-4 md:place-self-center justify-self-center md:justify-self-end -mt-5 md:-mt-0">
-          <a href="https://www.facebook.com/bissawjitchandraw/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
-            <i class="fa-brands fa-facebook"></i>
-          </a>          
-          <a href="https://www.youtube.com/@BissawjitChandraw/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
-            <i class="fa-brands fa-youtube"></i>
-          </a>
-          <a href="https://www.instagram.com/bissawjit18/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
-            <i class="fa-brands fa-instagram"></i>
-          </a>          
-        </nav>
-      </footer>
     </div>
 
     <!-- Edit Modal -->
@@ -259,7 +213,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <input type="date" id="editDate" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
           <input type="text" id="editDescription" placeholder="বিবরণ" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
-          <input type="number" id="editAmount" placeholder="টাকার পরিমাণ" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
+          <input type="number" id="editAmount" min="0" placeholder="টাকার পরিমাণ" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100" required>
           <select id="editCategory" class="border p-2 rounded w-full bg-gray-50 dark:bg-gray-700 dark:text-gray-100">
             <option value="খাবার">খাবার</option>
             <option value="পরিবহন">পরিবহন</option>
@@ -275,9 +229,29 @@
         </div>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="mt-3">
+      <div class="footer rounded-md sm:footer-horizontal bg-gray-800 text-neutral-content items-center py-4 md:pr-4">
+        <aside class="w-full lg:grid-flow-col text-center  items-center -mb-4 md:-mb-0">
+          <img class="w-[50px] border border-gray-600 p-1 rounded-full text-center rounded-sm justify-self-center" src="src/bissawjit.png" alt="">
+          <p class="text-gray-500">Copyright © 2025 - All right reserved by <b>Budget Tracker App | BISSAWJIT</b></p>
+        </aside>
+        <nav class="grid-flow-col gap-4 md:place-self-center justify-self-center md:justify-self-end -mt-5 md:-mt-0">
+          <a href="https://www.facebook.com/bissawjitchandraw/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
+            <i class="fa-brands fa-facebook"></i>
+          </a>          
+          <a href="https://www.youtube.com/@BissawjitChandraw/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
+            <i class="fa-brands fa-youtube"></i>
+          </a>
+          <a href="https://www.instagram.com/bissawjit18/" target="_blank" class="text-2xl lg:text-3xl text-gray-500 hover:text-gray-300">
+            <i class="fa-brands fa-instagram"></i>
+          </a>          
+        </nav>
+      </div>
+    </footer>
   </div>
 
-  
   <script src="script.js"></script>
 </body>
 </html>
