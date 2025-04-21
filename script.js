@@ -7,6 +7,7 @@
     let editingIndex = null;
     let categoryChart = null;
     let timelineChart = null;
+    let isExpenseListVisible = true;
 
     // Local Storage Fallback
     function getLocalStorageItem(key, defaultValue) {
@@ -58,6 +59,7 @@
       renderExpenses();
       updateBudgetProgress();
       generateMonthlyReport();
+      updateToggleButtonText();
     }
 
     function updateUserSelect() {
@@ -407,6 +409,31 @@
       showNotification('খরচ মুছে ফেলা হয়েছে!', 'success');
     }
 
+    function toggleExpenseList() {
+      console.log('Toggling expense list visibility');
+      isExpenseListVisible = !isExpenseListVisible;
+      const desktopTable = document.querySelector('.desktop-table');
+      const mobileCards = document.querySelector('.mobile-cards');
+      const totalAmount = document.getElementById('totalAmount').parentElement;
+
+      if (isExpenseListVisible) {
+        desktopTable.style.display = window.innerWidth <= 640 ? 'none' : 'block';
+        mobileCards.style.display = window.innerWidth > 640 ? 'none' : 'block';
+        totalAmount.style.display = 'block';
+      } else {
+        desktopTable.style.display = 'none';
+        mobileCards.style.display = 'none';
+        totalAmount.style.display = 'none';
+      }
+
+      updateToggleButtonText();
+    }
+
+    function updateToggleButtonText() {
+      const toggleButton = document.getElementById('toggleExpenseListButton');
+      toggleButton.textContent = isExpenseListVisible ? 'তালিকা হাইড করুন' : 'তালিকা শো করুন';
+    }
+
     function renderExpenses() {
       console.log('Rendering expenses');
       const tableBody = document.getElementById('expenseTable');
@@ -454,6 +481,8 @@
       });
 
       document.getElementById('totalAmount').textContent = total.toFixed(2);
+      toggleExpenseList(); // Ensure visibility is correctly set after rendering
+      toggleExpenseList(); // Toggle back to maintain default visible state
     }
 
     function clearForm() {
@@ -575,6 +604,11 @@
       const isDarkMode = document.documentElement.classList.contains('dark');
       const textColor = isDarkMode ? '#f1f5f9' : '#111827';
       const gridColor = isDarkMode ? '#475569' : '#d1d5db';
+      const isMobile = window.innerWidth <= 640;
+      const isTablet = window.innerWidth > 640 && window.innerWidth <= 1024;
+      const fontSize = isMobile ? 10 : isTablet ? 12 : 14;
+      const titleFontSize = isMobile ? 12 : isTablet ? 14 : 16;
+      const legendPadding = isMobile ? 8 : isTablet ? 10 : 12;
 
       const categoryBreakdown = {};
       filteredExpenses.forEach(expense => {
@@ -597,20 +631,27 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
           plugins: {
             legend: { 
-              position: 'top', 
+              position: isMobile ? 'bottom' : 'top', 
               labels: { 
-                font: { size: 14, family: 'Noto Sans Bengali' }, 
-                color: textColor 
+                font: { size: fontSize, family: 'Noto Sans Bengali' }, 
+                color: textColor,
+                padding: legendPadding,
+                boxWidth: isMobile ? 24 : 32
               } 
             },
             title: { 
               display: true, 
               text: 'ক্যাটাগরি-ভিত্তিক খরচ', 
-              font: { size: 16, family: 'Noto Sans Bengali' }, 
-              color: textColor 
+              font: { size: titleFontSize, family: 'Noto Sans Bengali' }, 
+              color: textColor,
+              padding: { top: 8, bottom: 8 }
+            },
+            tooltip: {
+              bodyFont: { size: fontSize, family: 'Noto Sans Bengali' },
+              titleFont: { size: fontSize + 2, family: 'Noto Sans Bengali' }
             }
           }
         }
@@ -627,7 +668,7 @@
       if (timelineChart) timelineChart.destroy();
 
       const ctx = document.getElementById('timelineChart').getContext('2d');
-      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+      const gradient = ctx.createLinearGradient(0, 0, 0, isMobile ? 300 : isTablet ? 350 : 400);
       gradient.addColorStop(0, isDarkMode ? 'rgba(129, 140, 248, 0.8)' : 'rgba(59, 130, 246, 0.8)');
       gradient.addColorStop(1, isDarkMode ? 'rgba(165, 180, 252, 0.2)' : 'rgba(96, 165, 250, 0.2)');
 
@@ -641,7 +682,8 @@
             borderColor: isDarkMode ? '#818cf8' : '#3b82f6',
             backgroundColor: gradient,
             fill: true,
-            tension: 0.4
+            tension: 0.4,
+            pointRadius: isMobile ? 3 : 4
           }]
         },
         options: {
@@ -649,17 +691,24 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { 
-              position: 'top', 
+              position: isMobile ? 'bottom' : 'top', 
               labels: { 
-                font: { size: 14, family: 'Noto Sans Bengali' }, 
-                color: textColor 
+                font: { size: fontSize, family: 'Noto Sans Bengali' }, 
+                color: textColor,
+                padding: legendPadding,
+                boxWidth: isMobile ? 24 : 32
               } 
             },
             title: { 
               display: true, 
               text: 'দৈনিক খরচ ট্রেন্ড', 
-              font: { size: 16, family: 'Noto Sans Bengali' }, 
-              color: textColor 
+              font: { size: titleFontSize, family: 'Noto Sans Bengali' }, 
+              color: textColor,
+              padding: { top: 8, bottom: 8 }
+            },
+            tooltip: {
+              bodyFont: { size: fontSize, family: 'Noto Sans Bengali' },
+              titleFont: { size: fontSize + 2, family: 'Noto Sans Bengali' }
             }
           },
           scales: {
@@ -667,20 +716,32 @@
               title: { 
                 display: true, 
                 text: 'তারিখ', 
-                font: { size: 14, family: 'Noto Sans Bengali' }, 
-                color: textColor 
+                font: { size: fontSize + 2, family: 'Noto Sans Bengali' }, 
+                color: textColor,
+                padding: { top: 4 }
               },
-              grid: { color: gridColor }
+              grid: { color: gridColor },
+              ticks: { 
+                font: { size: fontSize, family: 'Noto Sans Bengali' }, 
+                color: textColor,
+                maxRotation: isMobile ? 45 : 0,
+                minRotation: isMobile ? 45 : 0
+              }
             },
             y: { 
               title: { 
                 display: true, 
                 text: 'টাকা', 
-                font: { size: 14, family: 'Noto Sans Bengali' }, 
-                color: textColor 
+                font: { size: fontSize + 2, family: 'Noto Sans Bengali' }, 
+                color: textColor,
+                padding: { bottom: 4 }
               }, 
               beginAtZero: true,
-              grid: { color: gridColor }
+              grid: { color: gridColor },
+              ticks: { 
+                font: { size: fontSize, family: 'Noto Sans Bengali' }, 
+                color: textColor 
+              }
             }
           }
         }
@@ -696,4 +757,3 @@
       console.error('Error during initial render:', error);
       showNotification('অ্যাপ লোড করতে সমস্যা হয়েছে!', 'error');
     }
- 
