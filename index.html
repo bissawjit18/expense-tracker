@@ -53,11 +53,12 @@
     <!-- User Profile and Navigation -->
     <div class="flex justify-between items-center mb-4">
       <div class="flex items-center gap-4">
-        <button id="userProfileButton" class="bg-indigo-500 text-white p-2 rounded hover:bg-indigo-600">ইউজার প্রোফাইল</button>
-        <span id="currentUser" class="text-lg font-semibold"></span>
+        <button id="userProfileButton" class="w-[80px] md:w-[150px] text-sm md:text-lg bg-indigo-500 text-white p-1 md:p-2 rounded hover:bg-indigo-600">ইউজার প্রোফাইল</button>
+        <span id="currentUser" class="text-sm md:text-lg w-[120px] md:w-[300px] font-semibold"></span>
       </div>
-      <button id="themeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center">
-        <span id="themeIcon">🌙</span>
+      <button id="themeToggle" class="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 p- rounded-sm w-10 h-10 flex items-center justify-center">
+        <img title="Expenses Tracker" class="w-full rounded-md" src="src/budgetTracker.png" alt="Logo">
+        <span class="hidden" id="themeIcon">🌙</span>
       </button>
     </div>
 
@@ -262,7 +263,7 @@
      <!-- Footer -->
   <footer class="mt-8 md:mt-5">
     <div class="footer rounded-md sm:footer-horizontal bg-gray-800 text-neutral-content items-center py-4 md:pr-4">
-      <aside class="w-full lg:grid-flow-col text-center  items-center -mb-4 md:-mb-0">
+      <aside class="w-full md:grid-flow-col text-center  items-center -mb-4 md:-mb-0">
         <img class="w-[50px] border border-gray-600 p-1 rounded-full text-center rounded-sm justify-self-center" src="src/bissawjit.png" alt="">
         <p class="text-gray-500">Copyright © 2025 - All right reserved by <b>Expenses Tracker App | BISSAWJIT</b></p>
       </aside>
